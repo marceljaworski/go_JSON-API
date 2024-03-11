@@ -2,10 +2,13 @@ package main
 
 import (
 	"log"
+
+	"github.com/marceljaworski/go_JSON-API/handler"
+	"github.com/marceljaworski/go_JSON-API/storage"
 )
 
 func main() {
-	store, err := NewPostgresStore()
+	store, err := storage.NewPostgresStore()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -14,6 +17,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	server := NewAPIServer("3000", store)
+	server := handler.NewAPIServer("3000", store)
 	server.Run()
 }
