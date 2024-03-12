@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/mux"
 	"github.com/marceljaworski/go_JSON-API/storage"
 )
@@ -27,7 +28,8 @@ func (s *APIServer) Run() {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/account", makeHTTPHandleFunc(s.handleAccount))
-	router.HandleFunc("/account/{id}", makeHTTPHandleFunc(s.handleAccountByID))
+	router.HandleFunc("/account/{id}", withJWTAuth(makeHTTPHandleFunc(s.handleAccountByID)))
+	router.HandleFunc("/transfer", makeHTTPHandleFunc(s.handleTransfer))
 
 	log.Println("JSON API server running on port: ", s.listenAddr)
 
@@ -104,10 +106,47 @@ func (s *APIServer) handleDeleteAccount(w http.ResponseWriter, r *http.Request) 
 	return WriteJSON(w, http.StatusOK, map[string]int{"deleted": id})
 }
 
+func (s *APIServer) handleTransfer(w http.ResponseWriter, r *http.Request) error {
+	transferReq := new(storage.TransferRequest)
+	if err := json.NewDecoder(r.Body).Decode(transferReq); err != nil {
+		return err
+	}
+	defer r.Body.Close()
+	return WriteJSON(w, http.StatusOK, transferReq)
+}
+
 func WriteJSON(w http.ResponseWriter, status int, v any) error {
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(status)
 	return json.NewEncoder(w).Encode(v)
+}
+
+func withJWTAuth(handlerFunc http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		tokenString := r.Header.Get("x-jwt-token")
+
+		_, err := validateJWT(tokenString)
+		if err != nil {
+			WriteJSON(w, http.StatusForbidden, ApiError{Error: "invalid token"})
+			return
+		}
+		handlerFunc(w, r)
+	}
+}
+
+const jwtSecret = "notsecret" // Do not do that in Produccion. Better, in the terminal write: export JWT_SECRET=supersecret
+
+func validateJWT(tokenString string) (*jwt.Token, error) {
+	// jwtSecret := os.Getenv("JWT_SECRET")
+	return jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		// Don't forget to validate the alg is what you expect:
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		}
+
+		// hmacSampleSecret is a []byte containing your secret, e.g. []byte("my_secret_key")
+		return []byte(jwtSecret), nil
+	})
 }
 
 type apiFunc func(http.ResponseWriter, *http.Request) error
