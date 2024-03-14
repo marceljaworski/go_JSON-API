@@ -28,6 +28,7 @@ func NewAPIServer(listenAddr string, store storage.Storage) *APIServer {
 func (s *APIServer) Run() {
 	router := mux.NewRouter()
 
+	router.HandleFunc("/signup", makeHTTPHandleFunc(s.handleSignUp))
 	router.HandleFunc("/login", makeHTTPHandleFunc(s.handleLogin))
 	router.HandleFunc("/account", makeHTTPHandleFunc(s.handleAccount))
 	router.HandleFunc("/account/{id}", s.withJWTAuth(makeHTTPHandleFunc(s.handleAccountByID)))
@@ -38,7 +39,12 @@ func (s *APIServer) Run() {
 	http.ListenAndServe(s.listenAddr, router)
 
 }
-
+func (s *APIServer) handleSignUp(w http.ResponseWriter, r *http.Request) error {
+	if r.Method == "POST" {
+		return s.handleCreateAccount(w, r)
+	}
+	return fmt.Errorf("method not allowed %s", r.Method)
+}
 func (s *APIServer) handleLogin(w http.ResponseWriter, r *http.Request) error {
 	if r.Method != "POST" {
 		return fmt.Errorf("method not allowed %s", r.Method)
@@ -67,9 +73,6 @@ func (s *APIServer) handleLogin(w http.ResponseWriter, r *http.Request) error {
 func (s *APIServer) handleAccount(w http.ResponseWriter, r *http.Request) error {
 	if r.Method == "GET" {
 		return s.handleGetAccount(w)
-	}
-	if r.Method == "POST" {
-		return s.handleCreateAccount(w, r)
 	}
 	return fmt.Errorf("method not allowed %s", r.Method)
 }
@@ -114,7 +117,7 @@ func (s *APIServer) handleCreateAccount(w http.ResponseWriter, r *http.Request) 
 		return err
 	}
 
-	account, err := storage.NewAccount(createAccountReq.FirstName, createAccountReq.LastName, createAccountReq.Password)
+	account, err := storage.NewAccount(createAccountReq.FirstName, createAccountReq.LastName, createAccountReq.Email, createAccountReq.Password)
 	if err != nil {
 		return err
 	}
