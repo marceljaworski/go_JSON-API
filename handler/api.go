@@ -40,11 +40,29 @@ func (s *APIServer) Run() {
 }
 
 func (s *APIServer) handleLogin(w http.ResponseWriter, r *http.Request) error {
+	if r.Method != "POST" {
+		return fmt.Errorf("method not allowed %s", r.Method)
+	}
+
 	var req storage.LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return err
 	}
-	return WriteJSON(w, http.StatusOK, req)
+
+	account, err := s.store.GetAccountByEmail(req.Email)
+	if err != nil {
+		return err
+	}
+	tokenString, err := createJWT(account)
+	if err != nil {
+		return err
+	}
+	resp := storage.LoginResponse{
+		Token: tokenString,
+		ID:    account.ID,
+	}
+
+	return WriteJSON(w, http.StatusOK, resp)
 }
 func (s *APIServer) handleAccount(w http.ResponseWriter, r *http.Request) error {
 	if r.Method == "GET" {
@@ -90,22 +108,21 @@ func (s *APIServer) handleGetAccountByID(w http.ResponseWriter, r *http.Request)
 }
 
 func (s *APIServer) handleCreateAccount(w http.ResponseWriter, r *http.Request) error {
-	var createAccountReq storage.CreateAccountRequest
+	createAccountReq := new(storage.CreateAccountRequest)
 
 	if err := json.NewDecoder(r.Body).Decode(createAccountReq); err != nil {
 		return err
 	}
 
-	account := storage.NewAccount(createAccountReq.FirstName, createAccountReq.LastName)
+	account, err := storage.NewAccount(createAccountReq.FirstName, createAccountReq.LastName, createAccountReq.Password)
+	if err != nil {
+		return err
+	}
+
 	if err := s.store.CreateAccount(account); err != nil {
 		return err
 	}
 
-	tokenString, err := createJWT(account)
-	if err != nil {
-		return err
-	}
-	fmt.Println("tokenString", tokenString)
 	return WriteJSON(w, http.StatusOK, account)
 }
 
