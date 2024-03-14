@@ -9,6 +9,7 @@
 
 ### To do
 
+- Sign Up
 - Seeding database 
 `seed := flag.Bool("seed", false, "seed the db")
 flag.Parse()
