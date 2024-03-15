@@ -7,11 +7,6 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// type Auth interface {
-// 	CreateToken(string) (string, error)
-// 	VerifyToken(string) error
-// }
-
 const jwtSecret = "notsecret" // Do not do that in Produccion. Better, in the terminal write: export JWT_SECRET=supersecret
 
 func CreateToken(firstName string) (string, error) {
@@ -36,7 +31,7 @@ func VerifyToken(tokenString string) error {
 	}
 
 	if !token.Valid {
-		return fmt.Errorf("invalid token 1")
+		return fmt.Errorf("invalid token")
 	}
 
 	return nil
