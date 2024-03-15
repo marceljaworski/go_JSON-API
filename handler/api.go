@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"time"
 
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/mux"
 	"github.com/marceljaworski/go_JSON-API/storage"
@@ -59,6 +61,12 @@ func (s *APIServer) handleLogin(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(account.Password), []byte(req.Password))
+	if err != nil {
+		return err
+	}
+
 	tokenString, err := createJWT(account)
 	if err != nil {
 		return err

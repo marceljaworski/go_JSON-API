@@ -128,6 +128,7 @@ func scanIntoAccount(rows *sql.Rows) (*Account, error) {
 		&account.FirstName,
 		&account.LastName,
 		&account.Email,
+		&account.Password,
 		&account.Number,
 		&account.Balance,
 		&account.CreatedAt)
