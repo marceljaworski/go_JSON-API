@@ -1,5 +1,8 @@
 # JSON API
+- Signup
+- Login
 - JWT
+- bcrypt
 - Postgres
 - Docker
 
@@ -9,7 +12,7 @@
 
 ### To do
 
-- Sign Up
+- Sign Up (x)
 - Seeding database 
 `seed := flag.Bool("seed", false, "seed the db")
 flag.Parse()

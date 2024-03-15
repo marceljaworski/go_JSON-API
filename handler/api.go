@@ -9,17 +9,17 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/gorilla/mux"
-	"github.com/marceljaworski/go_JSON-API/storage"
+	"github.com/marceljaworski/go_JSON-API/model"
 	"github.com/marceljaworski/go_JSON-API/token"
 )
 
 type APIServer struct {
 	listenAddr string
-	store      storage.Storage
+	store      model.Repo
 	auth       token.Auth
 }
 
-func NewAPIServer(listenAddr string, store storage.Storage, auth token.Auth) *APIServer {
+func NewAPIServer(listenAddr string, store model.Repo, auth token.Auth) *APIServer {
 	return &APIServer{
 		listenAddr: "localhost:" + listenAddr,
 		store:      store,
@@ -51,7 +51,7 @@ func (s *APIServer) handleSignUp(w http.ResponseWriter, r *http.Request) error {
 }
 func (s *APIServer) handleLogin(w http.ResponseWriter, r *http.Request) error {
 
-	var req storage.LoginRequest
+	var req model.LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func (s *APIServer) handleLogin(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	resp := storage.LoginResponse{
+	resp := model.LoginResponse{
 		Token: tokenString,
 		ID:    account.ID,
 	}
@@ -118,13 +118,13 @@ func (s *APIServer) handleGetAccountByID(w http.ResponseWriter, r *http.Request)
 }
 
 func (s *APIServer) handleCreateAccount(w http.ResponseWriter, r *http.Request) error {
-	createAccountReq := new(storage.CreateAccountRequest)
+	createAccountReq := new(model.CreateAccountRequest)
 
 	if err := json.NewDecoder(r.Body).Decode(createAccountReq); err != nil {
 		return err
 	}
 
-	account, err := storage.NewAccount(createAccountReq.FirstName, createAccountReq.LastName, createAccountReq.Email, createAccountReq.Password)
+	account, err := model.NewAccount(createAccountReq.FirstName, createAccountReq.LastName, createAccountReq.Email, createAccountReq.Password)
 	if err != nil {
 		return err
 	}
@@ -150,7 +150,7 @@ func (s *APIServer) handleDeleteAccount(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *APIServer) handleTransfer(w http.ResponseWriter, r *http.Request) error {
-	transferReq := new(storage.TransferRequest)
+	transferReq := new(model.TransferRequest)
 	if err := json.NewDecoder(r.Body).Decode(transferReq); err != nil {
 		return err
 	}

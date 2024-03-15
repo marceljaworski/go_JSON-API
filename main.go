@@ -4,12 +4,12 @@ import (
 	"log"
 
 	"github.com/marceljaworski/go_JSON-API/handler"
-	"github.com/marceljaworski/go_JSON-API/storage"
+	"github.com/marceljaworski/go_JSON-API/model"
 	"github.com/marceljaworski/go_JSON-API/token"
 )
 
 func main() {
-	store, err := storage.NewPostgresStore()
+	store, err := model.NewPostgresStore()
 	var auth token.Auth
 	if err != nil {
 		log.Fatal(err)
