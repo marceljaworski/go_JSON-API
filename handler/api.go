@@ -6,24 +6,23 @@ import (
 	"net/http"
 	"strconv"
 
-	"golang.org/x/crypto/bcrypt"
-
 	"github.com/gorilla/mux"
 	"github.com/marceljaworski/go_JSON-API/model"
 	"github.com/marceljaworski/go_JSON-API/token"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type APIServer struct {
 	listenAddr string
 	store      model.Repo
-	auth       token.Auth
+	// auth       token.Auth
 }
 
-func NewAPIServer(listenAddr string, store model.Repo, auth token.Auth) *APIServer {
+func NewAPIServer(listenAddr string, store model.Repo) *APIServer {
 	return &APIServer{
 		listenAddr: "localhost:" + listenAddr,
 		store:      store,
-		auth:       auth,
+		// auth:       auth,
 	}
 }
 
@@ -32,7 +31,7 @@ func (s *APIServer) Run() {
 
 	router.HandleFunc("/signup", makeHTTPHandleFunc(s.handleSignUp)).Methods("POST")
 	router.HandleFunc("/login", makeHTTPHandleFunc(s.handleLogin)).Methods("POST")
-	router.HandleFunc("/account", makeHTTPHandleFunc(s.handleAccount))
+	router.HandleFunc("/account", s.protectedHandler(makeHTTPHandleFunc(s.handleAccount)))
 	router.HandleFunc("/account/{id}", s.protectedHandler(makeHTTPHandleFunc(s.handleAccountByID)))
 	router.HandleFunc("/transfer", makeHTTPHandleFunc(s.handleTransfer))
 
@@ -50,9 +49,8 @@ func (s *APIServer) handleSignUp(w http.ResponseWriter, r *http.Request) error {
 
 }
 func (s *APIServer) handleLogin(w http.ResponseWriter, r *http.Request) error {
-
-	var req model.LoginRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	req := new(model.LoginRequest)
+	if err := json.NewDecoder(r.Body).Decode(req); err != nil {
 		return err
 	}
 
@@ -66,10 +64,11 @@ func (s *APIServer) handleLogin(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	tokenString, err := s.auth.CreateToken(account.FirstName)
+	tokenString, err := token.CreateToken(account.FirstName)
 	if err != nil {
 		return err
 	}
+
 	resp := model.LoginResponse{
 		Token: tokenString,
 		ID:    account.ID,
@@ -172,22 +171,13 @@ func (s *APIServer) protectedHandler(handlerFunc http.HandlerFunc) http.HandlerF
 			WriteJSON(w, http.StatusUnauthorized, ApiError{Error: "Missing authorization header"})
 			return
 		}
-		err := s.auth.VerifyToken(tokenString)
+		fmt.Println(tokenString)
+		err := token.VerifyToken(tokenString)
 		if err != nil {
-			WriteJSON(w, http.StatusUnauthorized, ApiError{Error: "Invalid Token"})
+			WriteJSON(w, http.StatusUnauthorized, ApiError{Error: err.Error()})
 			return
 		}
-		// idStr := mux.Vars(r)["id"]
-		// id, err := strconv.Atoi(idStr)
-		// if err != nil {
-		// 	WriteJSON(w, http.StatusForbidden, ApiError{Error: "permission denied"})
-		// 	return
-		// }
-		// account, err := s.store.GetAccountByID(id)
-		// if err != nil {
-		// 	WriteJSON(w, http.StatusForbidden, ApiError{Error: "permission denied"})
-		// 	return
-		// }
+
 		fmt.Println("Welcome to the the protected area")
 		handlerFunc(w, r)
 	}
