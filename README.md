@@ -8,11 +8,16 @@
 - Docker Compose
 
 ## How to Start
-- `docker-compose -f compose.yaml up`
-<!-- - `docker network create postgres-network`
-- `docker run --name postgres --network postgres-network -e POSTGRES_PASSWORD=supersecret -p 5432:5432 -d postgres` -->
+
+- `docker run --name postgres -e POSTGRES_PASSWORD=supersecret -p 5432:5432 -d postgres`
 
 - `go run main.go`
+
+## How to Start with Docker Compose
+
+- `export POSTGRES_PASSWORD=supersecret`
+
+- `docker-compose -f compose.yaml up`
 
 ### To do
 
@@ -23,4 +28,4 @@ flag.Parse()
 if seed {
     seedAccounts(store)
 }`
-- Docker Compose
+- Docker Compose (x)
