@@ -1,0 +1,17 @@
+version: '2.24.7'
+services:
+  server:
+    build: .
+    ports:
+      - 3000:3000
+    restart:
+      always
+    depends_on:
+      - "postgres"
+
+  postgres:
+    image: postgres
+    ports: 
+      - 5432:5432
+    environment:
+      - POSTGRES_PASSWORD=supersecret
